@@ -2,19 +2,30 @@
 // (a logistic regression exported by src/train.py).
 
 const form = document.getElementById("form");
+const $ = (id) => document.getElementById(id);
 let model = null;
 // The score stays hidden until the user changes an answer. Most students in the
 // training data reported depression, so the untouched defaults score low, and
 // showing that before anyone has answered would be misleading.
 let touched = false;
 
+// Words shown next to the 1–5 sliders.
+const LEVELS = {
+  pressure: ["Very low", "Low", "Moderate", "High", "Very high"],
+  satisfaction: ["Very unhappy", "Unhappy", "Neutral", "Happy", "Very happy"],
+  finance: ["None", "Mild", "Moderate", "High", "Severe"],
+};
+
+// The form asks for CGPA out of 4.0; the model was trained on a 10-point scale.
+const CGPA_SCALE = 10 / 4;
+
 // Factors shown to the user. Each maps to one or more model features.
 const GROUPS = [
   { label: "Academic pressure", features: ["Academic Pressure"],
     tip: "Break big deadlines into smaller steps, and ask tutors for help early when a module feels overwhelming." },
-  { label: "Satisfaction with studies", features: ["Study Satisfaction"],
+  { label: "Study satisfaction", features: ["Study Satisfaction"],
     tip: "If your course isn't working for you, an academic advisor can help you look at options." },
-  { label: "Daily study / work hours", features: ["Work/Study Hours"],
+  { label: "Study hours", features: ["Work/Study Hours"],
     tip: "Plan real breaks into long days. Rest is part of studying well." },
   { label: "Financial stress", features: ["Financial Stress"],
     tip: "Most universities offer hardship funds and free money-advice services. They're worth asking about." },
@@ -23,9 +34,19 @@ const GROUPS = [
   { label: "Diet", features: ["Diet: Moderate", "Diet: Unhealthy"],
     tip: "Regular meals with fruit and vegetables help with energy and mood." },
   { label: "CGPA", features: ["CGPA"], tip: "" },
-  { label: "Family history of mental illness", features: ["Family history"],
+  { label: "Family history", features: ["Family history"],
     tip: "You can't change this, but it's useful to mention if you ever speak to a doctor." },
 ];
+
+const sigmoid = (z) => 1 / (1 + Math.exp(-z));
+const toScore = (risk) => Math.min(99, Math.max(1, Math.round(100 * (1 - risk))));
+
+function readCgpa() {
+  const raw = form.elements.cgpa.value.trim();
+  const v = Number(raw);
+  const valid = raw !== "" && Number.isFinite(v) && v >= 0 && v <= 4;
+  return { valid, value: valid ? v * CGPA_SCALE : null };
+}
 
 function readInputs() {
   const f = new FormData(form);
@@ -34,7 +55,7 @@ function readInputs() {
   const diet = f.get("diet");
   return {
     "Academic Pressure": num("pressure"),
-    "CGPA": num("cgpa"),
+    "CGPA": readCgpa().value,
     "Study Satisfaction": num("satisfaction"),
     "Work/Study Hours": num("hours"),
     "Financial Stress": num("finance"),
@@ -47,20 +68,31 @@ function readInputs() {
   };
 }
 
-// Returns the score and each feature's contribution to the risk (log-odds),
-// measured relative to an average student in the training data.
+// Returns the risk and each feature's contribution to it (log-odds), measured
+// relative to an average student in the training data. A missing value (an
+// invalid CGPA) is treated as average, so it contributes nothing.
 function predict(x) {
   let logit = model.intercept;
   const contrib = {};
   for (const feat of model.features) {
-    const c = feat.coef * ((x[feat.name] - feat.mean) / feat.std);
+    const value = x[feat.name] ?? feat.mean;
+    const c = feat.coef * ((value - feat.mean) / feat.std);
     contrib[feat.name] = c;
     logit += c;
   }
-  const risk = 1 / (1 + Math.exp(-logit));
-  // Kept within 1–99: the model is never certain enough to justify 0 or 100.
-  const score = Math.min(99, Math.max(1, Math.round(100 * (1 - risk))));
-  return { score, contrib };
+  return { logit, risk: sigmoid(logit), contrib };
+}
+
+// How many score points each answer adds or removes on its own: the change it
+// would make to an average student's score. Measured from the average rather
+// than from the user's own score, because near 1 or 99 the score is saturated
+// and every single factor would look tiny.
+function factorPoints({ contrib }) {
+  const average = sigmoid(model.intercept);
+  return GROUPS.map((g) => {
+    const own = g.features.reduce((sum, name) => sum + (contrib[name] ?? 0), 0);
+    return { ...g, points: 100 * (average - sigmoid(model.intercept + own)) };
+  });
 }
 
 function band(score) {
@@ -69,77 +101,125 @@ function band(score) {
   if (score >= 40) return { name: "Some strain", color: "var(--mid)",
     text: "Some of your answers are linked to higher stress and low mood. The factors below show where small changes might help most." };
   return { name: "Under pressure", color: "var(--low)",
-    text: "Your answers look similar to students who reported depression symptoms. Please consider talking to someone: a friend, your university counselling service, or a doctor." };
+    text: "Your answers look similar to students who reported depression symptoms. Please consider talking to someone you trust." };
 }
 
-function renderFactors(contrib) {
-  const items = GROUPS.map((g) => ({
-    ...g,
-    value: g.features.reduce((sum, name) => sum + (contrib[name] ?? 0), 0),
-  })).filter((g) => Math.abs(g.value) >= 0.1);
+const fmt = (p) => (p > 0 ? "+" : "−") + Math.abs(Math.round(p));
 
-  const down = items.filter((g) => g.value > 0).sort((a, b) => b.value - a.value);
-  const up = items.filter((g) => g.value < 0).sort((a, b) => a.value - b.value);
+function renderFactors(groups) {
+  const shown = groups.filter((g) => Math.abs(g.points) >= 1)
+    .sort((a, b) => Math.abs(b.points) - Math.abs(a.points));
+  const list = $("factors");
+  list.replaceChildren();
 
-  const strength = (v) => (Math.abs(v) >= 0.6 ? "strong" : Math.abs(v) >= 0.3 ? "moderate" : "small");
+  if (!shown.length) {
+    const li = document.createElement("li");
+    li.innerHTML = '<span class="empty">Your answers are close to the survey average on every factor.</span>';
+    list.append(li);
+  }
+  // A fixed minimum scale keeps small effects looking small.
+  const scale = Math.max(15, ...shown.map((g) => Math.abs(g.points)));
+  for (const g of shown) {
+    const helping = g.points > 0;
+    const li = document.createElement("li");
+    li.setAttribute("aria-label",
+      `${g.label}: ${helping ? "helping" : "pulling down"} your score by about ${Math.abs(Math.round(g.points))} points`);
+    const name = document.createElement("span");
+    name.className = "f-name";
+    name.textContent = g.label;
+    const val = document.createElement("span");
+    val.className = "f-val";
+    val.textContent = fmt(g.points);
+    const track = document.createElement("span");
+    track.className = "f-track";
+    track.setAttribute("aria-hidden", "true");
+    const bar = document.createElement("span");
+    bar.className = `f-bar ${helping ? "pos" : "neg"}`;
+    bar.style.width = `${(Math.abs(g.points) / scale) * 50}%`;
+    track.append(bar);
+    li.append(name, track, val);
+    list.append(li);
+  }
 
-  const fill = (el, list, withTip) => {
-    el.replaceChildren();
-    if (!list.length) {
-      const li = document.createElement("li");
-      li.className = "empty";
-      li.textContent = "Nothing notable.";
-      el.append(li);
-      return;
-    }
-    for (const g of list.slice(0, 4)) {
-      const li = document.createElement("li");
-      li.textContent = `${g.label} (${strength(g.value)} effect)`;
-      if (withTip && g.tip) {
-        const tip = document.createElement("small");
-        tip.textContent = g.tip;
-        li.append(tip);
-      }
-      el.append(li);
-    }
-  };
+  // Tips for the two factors pulling the score down the most.
+  const tips = shown.filter((g) => g.points <= -1 && g.tip).slice(0, 2);
+  $("tips-box").hidden = !tips.length;
+  $("tips").replaceChildren(...tips.map((g) => {
+    const li = document.createElement("li");
+    const b = document.createElement("strong");
+    b.textContent = `${g.label}: `;
+    li.append(b, g.tip);
+    return li;
+  }));
+}
 
-  fill(document.getElementById("down"), down, true);
-  fill(document.getElementById("up"), up, false);
+function updateOutputs() {
+  for (const out of document.querySelectorAll("output[data-for]")) {
+    const name = out.dataset.for;
+    const v = Number(form.elements[name].value);
+    out.textContent = LEVELS[name] ? `${LEVELS[name][v - 1]} (${v}/5)` : `${v} h`;
+  }
+  const { valid } = readCgpa();
+  $("cgpa-error").hidden = valid;
+  form.elements.cgpa.setAttribute("aria-invalid", String(!valid));
 }
 
 function update() {
-  for (const out of document.querySelectorAll("output[data-for]")) {
-    out.textContent = form.elements[out.dataset.for].value;
-  }
+  updateOutputs();
   if (!model) return;
-  document.querySelector(".factors").hidden = !touched;
+
+  document.body.classList.toggle("has-score", touched);
+  $("bands").hidden = !touched;
+  $("details").hidden = !touched;
   if (!touched) {
-    document.getElementById("score").textContent = "–";
-    document.getElementById("band").textContent = "Your score will appear here";
-    document.getElementById("band").style.color = "";
-    document.getElementById("band-text").textContent =
-      "Adjust the answers above to match your own situation.";
+    $("score").textContent = "–";
+    $("band").textContent = "Your score will appear here";
+    $("band").style.color = "";
+    $("band-text").textContent = "Adjust the answers to match your own situation.";
+    $("ring").style.strokeDashoffset = "";
+    syncMobileBar();
     return;
   }
 
-  const { score, contrib } = predict(readInputs());
+  const prediction = predict(readInputs());
+  const score = toScore(prediction.risk);
   const b = band(score);
-  document.getElementById("score").textContent = score;
-  document.getElementById("band").textContent = b.name;
-  document.getElementById("band").style.color = b.color;
-  document.getElementById("band-text").textContent = b.text;
+  $("score").textContent = score;
+  $("band").textContent = b.name;
+  $("band").style.color = b.color;
+  $("band-text").textContent = b.text;
+  $("ring").style.strokeDashoffset = 2 * Math.PI * 52 * (1 - score / 100);
+  $("ring").style.stroke = b.color;
+  $("marker").style.left = `${score}%`;
+  $("support").hidden = score >= 40;
+  $("mb-score").textContent = score;
+  $("mb-band").textContent = b.name;
+  $("mb-band").style.color = b.color;
 
-  const bar = document.getElementById("bar");
-  const circumference = 2 * Math.PI * 52;
-  bar.style.strokeDashoffset = circumference * (1 - score / 100);
-  bar.style.stroke = b.color;
-
-  renderFactors(contrib);
+  renderFactors(factorPoints(prediction));
+  syncMobileBar();
 }
+
+// On narrow screens the result is below the form, so a small bar at the bottom
+// shows the live score while the result card itself is out of view.
+let resultVisible = false;
+function syncMobileBar() {
+  $("mobile-bar").hidden = !touched || resultVisible;
+}
+new IntersectionObserver(([entry]) => {
+  resultVisible = entry.isIntersecting;
+  syncMobileBar();
+}, { threshold: 0.15 }).observe($("result"));
+$("mb-jump").addEventListener("click", () => $("result").scrollIntoView({ behavior: "smooth", block: "start" }));
 
 form.addEventListener("input", () => {
   touched = true;
+  update();
+});
+
+$("reset-btn").addEventListener("click", () => {
+  form.reset();
+  touched = false;
   update();
 });
 
@@ -150,14 +230,13 @@ fetch("model.json")
   })
   .then((m) => {
     model = m;
-    document.getElementById("model-info").textContent =
+    $("model-info").textContent =
       `Model: logistic regression trained on ${m.trained_on_rows.toLocaleString()} student survey responses (test AUC ${m.test_auc}).`;
     update();
   })
   .catch(() => {
-    document.getElementById("band").textContent = "Couldn't load the model.";
-    document.getElementById("band-text").textContent =
-      "Run python src/train.py first, then serve the docs folder (see README).";
+    $("band").textContent = "Couldn't load the model.";
+    $("band-text").textContent = "Run python src/train.py first, then serve the docs folder (see README).";
   });
 
 update();

@@ -6,7 +6,7 @@ history.
 
 **Live demo:** https://abdullahrasheed452.github.io/MentalHealthScorePredictor/
 
-<img src="docs/screenshot.png" alt="The app showing a score of 56, labelled Some strain, with the factors helping and hurting the score" width="600">
+<img src="docs/screenshot.png" alt="The app: the questions on the left, and on the right a score of 55 labelled Some strain, with bars showing how many points each answer adds or removes" width="600">
 
 > This is an educational project, not a medical tool. The score is a statistical estimate and can
 > be wrong for any individual.
@@ -21,7 +21,10 @@ history.
 3. The static site in `docs/` loads those weights and computes
    **score = 100 × (1 − predicted probability)** in the browser. No server is needed, and nothing the
    user enters leaves their device.
-4. Each input's contribution to the prediction is shown as a factor that's helping or hurting the score.
+4. Each answer is shown as a bar: how many points it adds to or removes from an average student's
+   score on its own, with tips for the answers pulling the score down the most.
+
+CGPA is entered out of 4.0 and converted to the 10-point scale used in the training survey.
 
 ## Results
 
