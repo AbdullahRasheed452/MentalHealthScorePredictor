@@ -1,0 +1,12 @@
+{
+  "rows": 682,
+  "depressed_share": 0.4706744868035191,
+  "consistency": {
+    "total_matches_answers": 1.0,
+    "mean_question_correlation": 0.4410186196455252,
+    "cronbach_alpha": 0.8810983342001976
+  },
+  "site_model_auc": 0.8296744073661775,
+  "site_model_spearman_vs_phq_total": 0.6004928523753542,
+  "india_auc_same_inputs": 0.8270783144107491
+}

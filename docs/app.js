@@ -23,8 +23,6 @@ const GROUPS = [
   { label: "Diet", features: ["Diet: Moderate", "Diet: Unhealthy"],
     tip: "Regular meals with fruit and vegetables help with energy and mood." },
   { label: "CGPA", features: ["CGPA"], tip: "" },
-  { label: "Age", features: ["Age"],
-    tip: "Not something you can change. In this survey, younger students reported depression more often." },
   { label: "Family history of mental illness", features: ["Family history"],
     tip: "You can't change this, but it's useful to mention if you ever speak to a doctor." },
 ];
@@ -35,7 +33,6 @@ function readInputs() {
   const sleep = f.get("sleep");
   const diet = f.get("diet");
   return {
-    "Age": num("age"),
     "Academic Pressure": num("pressure"),
     "CGPA": num("cgpa"),
     "Study Satisfaction": num("satisfaction"),

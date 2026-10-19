@@ -13,3 +13,7 @@ data/raw/*
 .idea/
 .DS_Store
 Thumbs.db
+
+# External validation data (download it yourself, see README)
+data/external/*
+!data/external/.gitkeep

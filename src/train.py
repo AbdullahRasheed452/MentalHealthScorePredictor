@@ -24,14 +24,16 @@ from sklearn.preprocessing import StandardScaler
 ROOT = Path(__file__).resolve().parent.parent
 TARGET = "Depression"
 
-NUMERIC = ["Age", "Academic Pressure", "CGPA", "Study Satisfaction",
+NUMERIC = ["Academic Pressure", "CGPA", "Study Satisfaction",
            "Work/Study Hours", "Financial Stress"]
 SLEEP_LEVELS = ["Less than 5 hours", "5-6 hours", "7-8 hours", "More than 8 hours"]
 DIET_LEVELS = ["Healthy", "Moderate", "Unhealthy"]
 FAMILY = "Family History of Mental Illness"
 
 # Deliberately left out: suicidal-thoughts question (too sensitive to ask in a
-# public web form), and City / Degree / Gender (not things a student can change).
+# public web form), and City / Degree / Gender (not things a student can change,
+# and they add no accuracy). Age is also left out: it can't be changed, and its
+# effect did not hold up on students outside India (see src/validate_external.py).
 
 
 def find_csv() -> Path:
