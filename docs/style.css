@@ -1,0 +1,164 @@
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --text: #1c2330;
+  --muted: #5b6575;
+  --border: #dde1e7;
+  --accent: #3b6fd8;
+  --good: #2e8b57;
+  --mid: #c98a12;
+  --low: #c4473a;
+  --track: #e6e9ee;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12151b;
+    --surface: #1b2029;
+    --text: #e7eaf0;
+    --muted: #9aa3b2;
+    --border: #2c3340;
+    --accent: #7aa2f7;
+    --good: #5cc28a;
+    --mid: #e3ae45;
+    --low: #ef7a6c;
+    --track: #2a303b;
+  }
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+main {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 32px 16px 48px;
+}
+
+h1 { font-size: 1.8rem; margin: 0 0 8px; }
+h2 { font-size: 1rem; margin: 0 0 8px; }
+.lede { color: var(--muted); margin: 0 0 24px; }
+
+form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+fieldset {
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+
+label { display: grid; gap: 6px; }
+label > span { display: flex; justify-content: space-between; font-size: 0.95rem; }
+output { font-weight: 600; color: var(--accent); }
+
+label.range small {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+
+input[type="number"], select {
+  width: 100%;
+  padding: 8px 10px;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+#result {
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.score-card {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ring { position: relative; width: 120px; height: 120px; flex: none; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 10; }
+.ring .track { stroke: var(--track); }
+.ring .bar {
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-dasharray: 326.7;
+  stroke-dashoffset: 326.7;
+  transition: stroke-dashoffset 0.4s ease, stroke 0.4s ease;
+}
+
+.ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  padding-top: 40px;
+  gap: 2px;
+}
+.ring-label span { font-size: 2rem; font-weight: 700; }
+.ring-label small { color: var(--muted); }
+
+.band { font-size: 1.2rem; font-weight: 700; margin: 0 0 4px; }
+#band-text { margin: 0; color: var(--muted); max-width: 52ch; }
+
+.factors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.factors ul { margin: 0; padding-left: 18px; }
+.factors li { margin-bottom: 8px; }
+.factors li small { display: block; color: var(--muted); }
+.factors .empty { color: var(--muted); list-style: none; margin-left: -18px; }
+
+.notice {
+  margin-top: 24px;
+  padding: 14px 16px;
+  border-left: 4px solid var(--mid);
+  background: var(--surface);
+  border-radius: 8px;
+  font-size: 0.92rem;
+}
+
+a { color: var(--accent); }
+
+footer {
+  margin-top: 24px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+footer p { margin: 4px 0; }

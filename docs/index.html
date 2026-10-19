@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Student Wellbeing Score</title>
+  <meta name="description" content="Estimate a student wellbeing score from study and lifestyle habits. Runs entirely in your browser.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Student Wellbeing Score</h1>
+      <p class="lede">Answer a few questions about your studies and habits to get a 0–100 wellbeing estimate.
+        Everything runs in your browser. Nothing you enter is sent anywhere.</p>
+    </header>
+
+    <form id="form" novalidate>
+      <fieldset>
+        <legend>Studies</legend>
+
+        <label class="range">
+          <span>Academic pressure <output data-for="pressure"></output></span>
+          <input type="range" name="pressure" min="1" max="5" step="1" value="3">
+          <small><span>Very low</span><span>Very high</span></small>
+        </label>
+
+        <label class="range">
+          <span>Satisfaction with your studies <output data-for="satisfaction"></output></span>
+          <input type="range" name="satisfaction" min="1" max="5" step="1" value="3">
+          <small><span>Very unhappy</span><span>Very happy</span></small>
+        </label>
+
+        <label class="range">
+          <span>Study / work hours per day <output data-for="hours"></output></span>
+          <input type="range" name="hours" min="0" max="12" step="1" value="6">
+          <small><span>0</span><span>12</span></small>
+        </label>
+
+        <label>
+          <span>CGPA (out of 10)</span>
+          <input type="number" name="cgpa" min="0" max="10" step="0.1" value="7.5" inputmode="decimal">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Lifestyle</legend>
+
+        <label>
+          <span>Sleep per night</span>
+          <select name="sleep">
+            <option value="Less than 5 hours">Less than 5 hours</option>
+            <option value="5-6 hours">5–6 hours</option>
+            <option value="7-8 hours" selected>7–8 hours</option>
+            <option value="More than 8 hours">More than 8 hours</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Diet</span>
+          <select name="diet">
+            <option value="Healthy">Mostly healthy</option>
+            <option value="Moderate" selected>Mixed</option>
+            <option value="Unhealthy">Mostly unhealthy</option>
+          </select>
+        </label>
+
+        <label class="range">
+          <span>Financial stress <output data-for="finance"></output></span>
+          <input type="range" name="finance" min="1" max="5" step="1" value="3">
+          <small><span>None</span><span>Severe</span></small>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>About you</legend>
+
+        <label>
+          <span>Age</span>
+          <input type="number" name="age" min="16" max="40" step="1" value="21" inputmode="numeric">
+        </label>
+
+        <label>
+          <span>Family history of mental illness</span>
+          <select name="family">
+            <option value="No" selected>No</option>
+            <option value="Yes">Yes</option>
+          </select>
+        </label>
+      </fieldset>
+    </form>
+
+    <section id="result" aria-live="polite">
+      <div class="score-card">
+        <div class="ring" id="ring">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="track" cx="60" cy="60" r="52"></circle>
+            <circle class="bar" id="bar" cx="60" cy="60" r="52"></circle>
+          </svg>
+          <div class="ring-label"><span id="score">–</span><small>/ 100</small></div>
+        </div>
+        <div>
+          <p class="band" id="band">Loading model…</p>
+          <p id="band-text"></p>
+        </div>
+      </div>
+
+      <div class="factors">
+        <div>
+          <h2>Pulling your score down</h2>
+          <ul id="down"></ul>
+        </div>
+        <div>
+          <h2>Helping your score</h2>
+          <ul id="up"></ul>
+        </div>
+      </div>
+    </section>
+
+    <aside class="notice">
+      <strong>This is not a diagnosis.</strong> The score comes from a statistical model trained on a public
+      survey of students and can be wrong for any individual. If you are struggling, talk to someone you trust,
+      your university counselling service, or a doctor. If you are in crisis, contact your local emergency number
+      or find a free helpline at <a href="https://findahelpline.com" target="_blank" rel="noopener">findahelpline.com</a>.
+    </aside>
+
+    <footer>
+      <p id="model-info"></p>
+      <p><a href="https://github.com/AbdullahRasheed452/MentalHealthScorePredictor">Source on GitHub</a></p>
+    </footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
