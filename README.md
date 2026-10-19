@@ -1,118 +1,164 @@
 # Student Wellbeing Score
 
-A web app that estimates a 0–100 wellbeing score for students from study and lifestyle habits:
-academic pressure, study satisfaction, study hours, financial stress, sleep, diet, CGPA and family
-history.
+[![Live demo](https://img.shields.io/badge/demo-live-3b6fd8)](https://abdullahrasheed452.github.io/MentalHealthScorePredictor/)
+![Python](https://img.shields.io/badge/python-3.10%2B-3776ab)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-1.5%2B-f7931e)
+![No backend](https://img.shields.io/badge/backend-none-555)
 
-**Live demo:** https://abdullahrasheed452.github.io/MentalHealthScorePredictor/
+A privacy-first web app that estimates a student's wellbeing on a 0–100 scale from eight questions
+about their studies and habits, and shows which answers are helping or hurting the score. The model is
+trained on 27,837 student survey responses and validated on a separate university survey.
 
-<img src="docs/screenshot.png" alt="The app: the questions on the left, and on the right a score of 55 labelled Some strain, with bars showing how many points each answer adds or removes" width="600">
+**[Try the live demo →](https://abdullahrasheed452.github.io/MentalHealthScorePredictor/)**
 
-> This is an educational project, not a medical tool. The score is a statistical estimate and can
-> be wrong for any individual.
+> [!IMPORTANT]
+> This is an educational project, not a medical tool. The score is a statistical estimate and can be
+> wrong for any individual. If you are struggling, please talk to someone you trust, your university
+> counselling service, or a doctor.
+
+## Contents
+
+- [Features](#features)
+- [How it works](#how-it-works)
+- [Results](#results)
+- [Limitations](#limitations)
+- [Getting started](#getting-started)
+- [Project structure](#project-structure)
+- [Data sources](#data-sources)
+
+## Features
+
+- **Private by design.** The model runs entirely in the browser. There is no server, and nothing the
+  user enters leaves their device.
+- **Explainable.** Each answer is shown as a bar with the number of points it adds or removes,
+  alongside practical tips for the factors pulling the score down most.
+- **Validated beyond its training data.** Tested unchanged on a second, independent student survey.
+- **Responsive and accessible.** Works on phones and desktops, in light and dark mode, with keyboard
+  support and colour choices checked for colour-blind readers.
 
 ## How it works
 
-1. `src/train.py` trains a logistic regression on the Kaggle
-   [Student Depression Dataset](https://www.kaggle.com/datasets/hopesb/student-depression-dataset)
-   to predict the probability that a student reports depression. It also trains a gradient-boosting
-   model for comparison.
-2. The logistic regression weights are exported to `docs/model.json`.
-3. The static site in `docs/` loads those weights and computes
-   **score = 100 × (1 − predicted probability)** in the browser. No server is needed, and nothing the
-   user enters leaves their device.
-4. Each answer is shown as a bar: how many points it adds to or removes from an average student's
-   score on its own, with tips for the answers pulling the score down the most.
+```
+Kaggle survey ──▶ src/train.py ──▶ docs/model.json ──▶ browser (docs/app.js) ──▶ score + factors
+                  logistic regression    weights           score = 100 × (1 − risk)
+```
 
-CGPA is entered out of 4.0 and converted to the 10-point scale used in the training survey.
+1. `src/train.py` trains a logistic regression to predict the probability that a student reports
+   depression, and exports its weights to `docs/model.json`.
+2. The static site in `docs/` loads those weights and computes the score in JavaScript.
+3. Each factor's bar shows how much that answer, on its own, would change an average student's score.
+
+| Input | Form | Notes |
+|---|---|---|
+| Academic pressure | 1–5 slider | Strongest single factor |
+| Financial stress | 1–5 slider | Second strongest |
+| Study satisfaction | 1–5 slider | |
+| Study / work hours | 0–12 hours | |
+| Sleep | 4 options | |
+| Diet | 3 options | |
+| CGPA | out of 4.0 | Converted to the survey's 10-point scale |
+| Family history of mental illness | yes / no | |
+
+Logistic regression was chosen because it matched more complex models on accuracy (see below), runs in
+a few lines of JavaScript, and makes each input's effect directly explainable.
 
 ## Results
 
-Trained on 27,837 students (58.5% labelled as depression). With 5-fold cross-validation
-(`src/compare_models.py`), the site's logistic regression scores **AUC 0.860, accuracy 78.8%**.
+### Model comparison
 
-**More complex models don't do better.** Interactions, tuned gradient boosting and a random forest
-all land within 0.005 AUC of logistic regression (0.855–0.859). Logistic regression is used for the
-site because it runs in a few lines of JavaScript and each input's effect can be shown directly.
+5-fold cross-validation on 27,837 students (`src/compare_models.py`):
 
-**More data of the same kind wouldn't help either.** Trained on just 5,000 students the model already
-reaches AUC 0.859, and the remaining 22,000 add 0.001. Better accuracy would need *different*
-information about each student, not more rows.
+| Model | AUC | Accuracy |
+|---|---|---|
+| **Logistic regression (used by the site)** | **0.860** | **78.8%** |
+| Logistic regression + pairwise interactions | 0.859 | 78.8% |
+| Gradient boosting (tuned) | 0.858 | 78.7% |
+| Random forest | 0.855 | 78.5% |
 
-### Does it work outside India?
+A learning curve shows the model reaches AUC 0.859 with only 5,000 training rows, so more data of the
+same kind would not improve it. Better accuracy would need different information about each student.
 
-The Kaggle survey comes from India, so the model was also tested, unchanged, on the
+### External validation
+
+The training survey comes from India, so the model was tested unchanged on the
 [PHQ-9 Student Depression Dataset](https://data.mendeley.com/datasets/kkzjk253cy/6) (682 university
-students, CC BY 4.0) using `src/validate_external.py`. That survey uses different questions and
-measures depression with the PHQ-9, a standard clinical questionnaire (a score of 10 or more counts as
-moderate depression). It shares two of the site's inputs, academic pressure and financial stress.
+students), which uses different questions and measures depression with the clinical PHQ-9
+questionnaire (score ≥ 10 = moderate depression or worse). The two surveys share two inputs:
 
 | Using academic + financial pressure only | AUC |
 |---|---|
-| Indian students (the training survey) | 0.827 |
-| PHQ-9 students (a different survey) | **0.830** |
+| Training survey (India) | 0.827 |
+| Independent survey (PHQ-9) | **0.830** |
 
-The model ranks students by depression risk just as well on a survey it never saw. The script first
-checks that the data is internally consistent (Cronbach's alpha 0.88, totals match answers), because
-a second dataset that was tried failed those checks and was dropped.
+The model ranks students by risk as well on the independent survey as on its own.
+`src/validate_external.py` checks data quality before testing (Cronbach's α = 0.88); a third dataset
+that failed similar consistency checks was excluded.
 
-### What the site leaves out, and why
+### Feature decisions
 
-- **Suicidal thoughts.** Adding this question raises AUC to about 0.92, but it is too sensitive to
-  ask in a public web form, and it is partly a symptom of depression itself.
-- **Age.** In the Indian data younger students reported more depression, but on the PHQ-9 students
-  age had no effect, and leaving it out made the model carry over better. It also can't be changed.
-- **Gender, degree, city.** They add no accuracy and aren't things a student can change.
+| Left out | Reason |
+|---|---|
+| Suicidal thoughts | Raises AUC to ≈0.92, but too sensitive for a public form, and partly a symptom of depression itself |
+| Age | Its effect did not replicate on the independent survey; removing it improved external AUC (0.818 → 0.830) |
+| Gender, degree, city | No accuracy gain, and not things a student can change |
 
 ## Limitations
 
-- **Who the data describes.** The model is trained only on students in India. It held up on a
-  second university survey (see above), but that is one test, not proof that it works everywhere.
-- **Self-reported answers.** Both the habits and the depression label come from a questionnaire,
-  not a clinical assessment.
-- **Correlation, not cause.** The model learns which answers tend to appear together. It can't say
-  that changing a habit will change how someone feels.
-- **A high base rate.** 58.5% of students in the dataset reported depression, far more than in most
-  student populations, so scores tend to run low. The site waits until the user has changed an
-  answer before showing a score, and keeps scores between 1 and 99.
+- **Population.** Trained on students in India. One independent survey is encouraging, not proof of
+  broad generalisation.
+- **Self-reported data.** Both habits and the depression label come from questionnaires, not clinical
+  assessment.
+- **Correlation, not causation.** The model cannot say that changing a habit will change how someone
+  feels.
+- **High base rate.** 58.5% of the training survey reported depression, well above typical rates, so
+  scores tend to run low. The site hides the score until the user answers and keeps it within 1–99.
 
-## Run it yourself
+## Getting started
+
+**Requirements:** Python 3.10+
 
 ```bash
+git clone https://github.com/AbdullahRasheed452/MentalHealthScorePredictor.git
+cd MentalHealthScorePredictor
 pip install -r requirements.txt
-
-# 1. Download the dataset from Kaggle and put the CSV in data/raw/
-# 2. Train and export the model
-python src/train.py
-
-# 3. Optional: compare models, and test on the PHQ-9 survey
-#    (download it from Mendeley Data into data/external/ first)
-python src/compare_models.py
-python src/validate_external.py
-
-# 4. Serve the site locally, then open http://localhost:8000
-python -m http.server 8000 --directory docs
 ```
 
-## Project layout
+Download the [Student Depression Dataset](https://www.kaggle.com/datasets/hopesb/student-depression-dataset)
+CSV into `data/raw/`, then:
+
+```bash
+python src/train.py                 # train and export docs/model.json
+python src/compare_models.py        # optional: model comparison and learning curve
+python src/validate_external.py     # optional: external validation (PHQ-9 CSV in data/external/)
+
+python -m http.server 8000 --directory docs   # open http://localhost:8000
+```
+
+### Deployment
+
+GitHub Pages serves `docs/` from the `main` branch (Settings → Pages → *Deploy from a branch* →
+`main` / `/docs`). After retraining, commit the new `docs/model.json` and push.
+
+## Project structure
 
 ```
-data/raw/                  Kaggle CSV (not committed)
-data/external/             PHQ-9 CSV for external validation (not committed)
-src/train.py               training + export to docs/model.json
-src/compare_models.py      model comparison and learning curve
-src/validate_external.py   test on the PHQ-9 survey
-models/                    evaluation results (JSON)
-docs/            the website (served by GitHub Pages)
+├── data/
+│   ├── raw/                  training CSV (not committed)
+│   └── external/             validation CSV (not committed)
+├── docs/                     the website, served by GitHub Pages
+│   ├── index.html
+│   ├── app.js                scoring and UI logic
+│   ├── style.css
+│   └── model.json            exported model weights
+├── models/                   evaluation results (JSON)
+├── src/
+│   ├── train.py              training and export
+│   ├── compare_models.py     model comparison and learning curve
+│   └── validate_external.py  external validation
+└── requirements.txt
 ```
 
-## Deploying
+## Data sources
 
-GitHub Pages serves the `docs/` folder from the `main` branch
-(Settings → Pages → Source: *Deploy from a branch* → `main` / `/docs`).
-After retraining, commit the new `docs/model.json` and push. The site updates within a minute or two.
-
-## Data credits
-
-- Student Depression Dataset by hopesb, [Kaggle](https://www.kaggle.com/datasets/hopesb/student-depression-dataset).
-- PHQ-9 Student Depression Dataset, [Mendeley Data](https://data.mendeley.com/datasets/kkzjk253cy/6), CC BY 4.0.
+- [Student Depression Dataset](https://www.kaggle.com/datasets/hopesb/student-depression-dataset) by hopesb, Kaggle.
+- [PHQ-9 Student Depression Dataset](https://data.mendeley.com/datasets/kkzjk253cy/6), Mendeley Data, licensed CC BY 4.0.
