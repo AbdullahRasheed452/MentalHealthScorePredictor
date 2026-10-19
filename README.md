@@ -4,6 +4,7 @@
 ![Python](https://img.shields.io/badge/python-3.10%2B-3776ab)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-1.5%2B-f7931e)
 ![No backend](https://img.shields.io/badge/backend-none-555)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2e8b57)](LICENSE)
 
 A privacy-first web app that estimates a student's wellbeing on a 0–100 scale from eight questions
 about their studies and habits, and shows which answers are helping or hurting the score. The model is
@@ -25,6 +26,7 @@ trained on 27,837 student survey responses and validated on a separate universit
 - [Getting started](#getting-started)
 - [Project structure](#project-structure)
 - [Data sources](#data-sources)
+- [License](#license)
 
 ## Features
 
@@ -155,6 +157,7 @@ GitHub Pages serves `docs/` from the `main` branch (Settings → Pages → *Depl
 │   ├── train.py              training and export
 │   ├── compare_models.py     model comparison and learning curve
 │   └── validate_external.py  external validation
+├── LICENSE
 └── requirements.txt
 ```
 
@@ -162,3 +165,8 @@ GitHub Pages serves `docs/` from the `main` branch (Settings → Pages → *Depl
 
 - [Student Depression Dataset](https://www.kaggle.com/datasets/hopesb/student-depression-dataset) by hopesb, Kaggle.
 - [PHQ-9 Student Depression Dataset](https://data.mendeley.com/datasets/kkzjk253cy/6), Mendeley Data, licensed CC BY 4.0.
+
+## License
+
+The code is released under the [MIT License](LICENSE). The datasets are not included in this
+repository and remain under their own terms; see [Data sources](#data-sources).
