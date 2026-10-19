@@ -23,7 +23,8 @@ const GROUPS = [
   { label: "Diet", features: ["Diet: Moderate", "Diet: Unhealthy"],
     tip: "Regular meals with fruit and vegetables help with energy and mood." },
   { label: "CGPA", features: ["CGPA"], tip: "" },
-  { label: "Age", features: ["Age"], tip: "" },
+  { label: "Age", features: ["Age"],
+    tip: "Not something you can change. In this survey, younger students reported depression more often." },
   { label: "Family history of mental illness", features: ["Family history"],
     tip: "You can't change this, but it's useful to mention if you ever speak to a doctor." },
 ];
@@ -60,7 +61,9 @@ function predict(x) {
     logit += c;
   }
   const risk = 1 / (1 + Math.exp(-logit));
-  return { score: Math.round(100 * (1 - risk)), contrib };
+  // Kept within 1–99: the model is never certain enough to justify 0 or 100.
+  const score = Math.min(99, Math.max(1, Math.round(100 * (1 - risk))));
+  return { score, contrib };
 }
 
 function band(score) {

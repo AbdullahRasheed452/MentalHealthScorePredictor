@@ -6,6 +6,8 @@ family history.
 
 **Live demo:** https://abdullahrasheed452.github.io/MentalHealthScorePredictor/
 
+<img src="docs/screenshot.png" alt="The app showing a score of 62, labelled Some strain, with the factors helping and hurting the score" width="600">
+
 > This is an educational project, not a medical tool. The score is a statistical estimate and can
 > be wrong for any individual.
 
@@ -33,6 +35,18 @@ Trained on 27,837 student rows (58.5% labelled as depression), with a stratified
 Logistic regression is used for the site because it runs in a few lines of JavaScript and its
 per-feature contributions are directly explainable. The question about suicidal thoughts in the
 original dataset is left out on purpose: it is too sensitive to ask in a public web form.
+
+## Limitations
+
+- **Who the data describes.** The survey was collected from students in India. Results may not
+  carry over to students elsewhere.
+- **Self-reported answers.** Both the habits and the depression label come from a questionnaire,
+  not a clinical assessment.
+- **Correlation, not cause.** The model learns which answers tend to appear together. It can't say
+  that changing a habit will change how someone feels.
+- **A high base rate.** 58.5% of students in the dataset reported depression, far more than in most
+  student populations, so scores tend to run low. The site waits until the user has changed an
+  answer before showing a score, and keeps scores between 1 and 99.
 
 ## Run it yourself
 
